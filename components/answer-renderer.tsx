@@ -22,7 +22,7 @@ export default function AnswerRenderer({ content }: AnswerRendererProps) {
   let pendingImages: PictureContentBlock[] = []
 
   for (const block of content) {
-    if (block.type === 'picture') {
+    if (block.type === 'image') {
       pendingImages.push(block)
     } else if (block.type === 'text') {
       // If there were images before this text block, flush them first
