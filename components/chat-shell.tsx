@@ -153,31 +153,30 @@ function Header({ onNewChat, hasMessages }: { onNewChat: () => void; hasMessages
           </p>
         </div>
 
-        {/* New chat button — only visible when there are messages */}
-        {hasMessages && (
-          <button
-            type="button"
-            onClick={onNewChat}
-            title="Nueva conversación"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-all duration-150 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+        {/* New chat button — always visible */}
+        <button
+          type="button"
+          onClick={onNewChat}
+          disabled={!hasMessages}
+          title="Nueva conversación"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-all duration-150 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <svg
+            className="size-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
           >
-            <svg
-              className="size-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4.5v15m7.5-7.5h-15"
-              />
-            </svg>
-            Nueva
-          </button>
-        )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+          Nueva
+        </button>
 
         {/* Online status badge */}
         <div className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
