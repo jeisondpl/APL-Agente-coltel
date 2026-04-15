@@ -122,7 +122,7 @@ function EmptyState({ onSuggest }: { onSuggest: (q: string) => void }) {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 
-function Header() {
+function Header({ onNewChat, hasMessages }: { onNewChat: () => void; hasMessages: boolean }) {
   return (
     <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3.5">
@@ -152,6 +152,32 @@ function Header() {
             Coltel — Procedimientos operativos y soporte técnico
           </p>
         </div>
+
+        {/* New chat button — only visible when there are messages */}
+        {hasMessages && (
+          <button
+            type="button"
+            onClick={onNewChat}
+            title="Nueva conversación"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-all duration-150 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+          >
+            <svg
+              className="size-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+            Nueva
+          </button>
+        )}
 
         {/* Online status badge */}
         <div className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
@@ -236,6 +262,12 @@ export default function ChatShell() {
     }
   }, [isLoading])
 
+  const handleNewChat = useCallback(() => {
+    setMessages([])
+    setInputValue('')
+    setIsLoading(false)
+  }, [])
+
   const hasMessages = messages.length > 0
 
   return (
@@ -250,7 +282,7 @@ export default function ChatShell() {
         }}
       />
 
-      <Header />
+      <Header onNewChat={handleNewChat} hasMessages={hasMessages} />
 
       {/* Message area */}
       <main
