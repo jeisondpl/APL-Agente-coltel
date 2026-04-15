@@ -17,15 +17,15 @@ const negociacionesResponse: ApiQueryResponse = {
         data: '# Pasos para resolver incidentes de negociaciones fallidas\n\n1. Consultar los logs de renegociaciones e integración con BackOffice\n   - Ejecutar la sentencia SQL sobre NAB_COMENTARIOS_RENEGOCIACIONES para revisar los logs de la gestión y la integración con BackOffice.\n\n2. Revisar las tablas relevantes\n   - Consultar las tablas indicadas para identificar el resultado y el alcance de la gestión:\n     - NAB_COMERCIAL_CANDIDATOS_BO2\n     - NAB_COMERCIAL_CANDIDATOS_BO_STAGES\n     - NAB_EB_NEGOCIOS\n     - NAB_NEGOCIOS_LINEAS\n     - NAB_COMENTARIOS_RENEGOCIACIONES\n     - NAB_VENTAS_NEGOCIO_INFORMACION_ADICIONAL\n\n3. Identificar el resultado de la gestión\n   - Verificar campos clave que muestran el resultado y el estado de la operación: Respuesta_Servicio, id_estado, IDPlanAnterior, CodPlanTarifario, IdTicket.\n   - Determinar el número de líneas afectadas, el código de plan y el número de ticket.\n   - Verificar el estado correspondiente en BackOffice.\n\n4. Identificar el número de requerimiento (si aplica)\n   - Consultar NAB_VENTAS_NEGOCIO_INFORMACION_ADICIONAL y revisar el campo ID_PRICING para obtener el número de requerimiento (ej.: REQ00000464474).\n\n5. Documentar evidencia y pasos de la falla\n   - Preparar un paso a paso de la falla desde el inicio hasta el fin.\n   - Reunir los datos del contacto autorizado.\n   - Registrar las validaciones de existencia en SalesForce y Greta según corresponda.\n\n6. Evaluar y ejecutar escalamiento (cuando corresponda)\n   - Para fallas en Mcare de empresas fijas, usar la matriz de escalamiento.\n   - Antes de escalar a Axon o a otras áreas, adjuntar los documentos obligatorios.\n\n7. Comunicación al usuario y cierre\n   - Si la funcionalidad no está soportada por T.I., usar el script de cierre.\n\n8. Seguimiento y cierre del incidente\n   - Hacer seguimiento del IdTicket y del ID_PRICING hasta la resolución.\n   - Confirmar en BackOffice que las líneas y campos afectados quedaron actualizados.',
       },
       {
-        type: 'picture',
+        type: 'image',
         url: '/img-pruebas/SOP-001-Instructivo Generalidades MCARE N1_Autogestión-picture-005.png',
       },
       {
-        type: 'picture',
+        type: 'image',
         url: '/img-pruebas/SOP-001-Instructivo Generalidades MCARE N1_Autogestión-picture-008.png',
       },
       {
-        type: 'picture',
+        type: 'image',
         url: '/img-pruebas/SOP-001-Instructivo Generalidades MCARE N1_Autogestión-picture-011.png',
       },
     ],
@@ -91,6 +91,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json()
     const question: string = body?.question ?? ''
+    const thread_id: string | undefined = body?.thread_id
 
     // Validate that question is not empty
     if (!question || question.trim().length === 0) {
@@ -113,7 +114,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       response = buildGenericResponse(question)
     }
 
-    return NextResponse.json(response, { status: 200 })
+    return NextResponse.json(
+      { ...response, thread_id: thread_id ?? null },
+      { status: 200 }
+    )
   } catch {
     return NextResponse.json(
       { error: 'Error interno del servidor. Por favor intenta de nuevo.' },

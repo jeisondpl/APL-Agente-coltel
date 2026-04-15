@@ -4,7 +4,7 @@ export type TextContentBlock = {
 }
 
 export type PictureContentBlock = {
-  type: 'picture'
+  type: 'image'
   url: string
 }
 
@@ -19,6 +19,7 @@ export type ChatMessage = {
 
 export type ApiQueryRequest = {
   question: string
+  thread_id?: string
   history?: Array<{ role: 'user' | 'assistant'; content: string }>
 }
 
@@ -26,4 +27,5 @@ export type ApiQueryResponse = {
   answer: {
     content: AnswerContentBlock[]
   }
+  thread_id?: string | null
 }
