@@ -18,15 +18,15 @@ const negociacionesResponse: ApiQueryResponse = {
       },
       {
         type: 'picture',
-        url: 'http://localhost:9000/coltel/SOP-010-Validaciones%20Renegociaciones%20Nabis_N1_Autogesti%C3%B3n/images/SOP-010-Validaciones%20Renegociaciones%20Nabis_N1_Autogesti%C3%B3n-picture-015.png',
+        url: '/img-pruebas/SOP-001-Instructivo Generalidades MCARE N1_Autogestión-picture-005.png',
       },
       {
         type: 'picture',
-        url: 'http://localhost:9000/coltel/SOP-010-Validaciones%20Renegociaciones%20Nabis_N1_Autogesti%C3%B3n/images/SOP-010-Validaciones%20Renegociaciones%20Nabis_N1_Autogesti%C3%B3n-picture-015.png',
+        url: '/img-pruebas/SOP-001-Instructivo Generalidades MCARE N1_Autogestión-picture-008.png',
       },
       {
         type: 'picture',
-        url: 'http://localhost:9000/coltel/SOP-010-Validaciones%20Renegociaciones%20Nabis_N1_Autogesti%C3%B3n/images/SOP-010-Validaciones%20Renegociaciones%20Nabis_N1_Autogesti%C3%B3n-picture-015.png',
+        url: '/img-pruebas/SOP-001-Instructivo Generalidades MCARE N1_Autogestión-picture-011.png',
       },
     ],
   },
