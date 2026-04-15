@@ -30,6 +30,7 @@ const negociacionesResponse: ApiQueryResponse = {
       },
     ],
   },
+  thread_id: '1234567890',
 }
 
 // Generic mock response for other questions
