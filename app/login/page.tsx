@@ -44,14 +44,14 @@ export default function LoginPage() {
   return (
     <div className="flex h-screen w-screen overflow-hidden">
       {/* ── Left panel (60%) ── */}
-      <div className="relative hidden w-[60%] lg:flex">
-        {/* Background image — fills the entire panel */}
+      <div className="relative hidden w-[60%] lg:flex" style={{ background: '#001530' }}>
+        {/* Background image — contain so Millicom logo is never cut */}
         <Image
           src="/img-pruebas/millicom/login.png"
           alt="Fondo Tigo Coltel"
           fill
           priority
-          className="object-cover object-center"
+          className="object-contain object-center"
           sizes="60vw"
         />
         {/* Subtle gradient overlay — bottom-to-top so image stays visible */}
