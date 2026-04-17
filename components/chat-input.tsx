@@ -60,7 +60,7 @@ export default function ChatInput({
   const canSend = value.trim().length > 0 && !isLoading && !isOverLimit
 
   return (
-    <div className="border-t border-slate-200 bg-white/80 backdrop-blur-sm">
+    <div style={{ borderTop: '1px solid #d1d1d1', background: '#FFFFFF' }}>
       <div className="mx-auto max-w-3xl px-4 py-3">
         {/* Suggested question pill — only shown when input is empty and not loading */}
         {suggestedQuestion && value.length === 0 && !isLoading && (
@@ -68,7 +68,8 @@ export default function ChatInput({
             <button
               type="button"
               onClick={handleSuggestedQuestion}
-              className="flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 transition-colors duration-150 hover:border-indigo-300 hover:bg-indigo-100 focus-ring"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150 focus-ring"
+              style={{ border: '1px solid #c5ccf7', background: '#e8ecff', color: '#001EB3' }}
               aria-label={`Usar pregunta sugerida: ${suggestedQuestion}`}
             >
               <svg
@@ -93,13 +94,23 @@ export default function ChatInput({
         {/* Composer form */}
         <form onSubmit={handleSubmit} noValidate>
           <div
-            className={[
-              'flex items-end gap-2 rounded-2xl border bg-white px-4 py-3 shadow-sm transition-colors duration-150',
-              isLoading
-                ? 'border-slate-200 bg-slate-50'
-                : 'border-slate-300 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100',
-              isOverLimit ? 'border-red-300 focus-within:border-red-400 focus-within:ring-red-100' : '',
-            ].join(' ')}
+            className="flex items-end gap-2 px-4 py-3 shadow-sm transition-colors duration-150"
+            style={{
+              borderRadius: '25px',
+              border: isOverLimit
+                ? '1px solid #e74c3c'
+                : '1px solid #d1d1d1',
+              background: isLoading ? '#f9f9f9' : '#FFFFFF',
+            }}
+            onFocusCapture={(e) => {
+              if (!isOverLimit) {
+                (e.currentTarget as HTMLDivElement).style.borderColor = '#001EB3'
+              }
+            }}
+            onBlurCapture={(e) => {
+              ;(e.currentTarget as HTMLDivElement).style.borderColor =
+                isOverLimit ? '#e74c3c' : '#d1d1d1'
+            }}
           >
             <textarea
               ref={textareaRef}
@@ -113,28 +124,32 @@ export default function ChatInput({
                   ? 'El asistente está procesando tu consulta…'
                   : 'Escribe tu consulta… (Enter para enviar, Shift+Enter para nueva línea)'
               }
-              className={[
-                'flex-1 resize-none bg-transparent text-sm text-slate-800 placeholder:text-slate-400',
-                'leading-relaxed outline-none disabled:cursor-not-allowed disabled:opacity-60',
-                'max-h-[168px] min-h-[28px]',
-              ].join(' ')}
+              className="flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none disabled:cursor-not-allowed disabled:opacity-60 max-h-[168px] min-h-[28px]"
+              style={{ color: '#333333', overflowY: 'auto' }}
               aria-label="Campo de consulta al asistente"
               aria-describedby="char-counter"
-              maxLength={charLimit + 50} // Small buffer to allow the over-limit state to show
-              style={{ overflowY: 'auto' }}
+              maxLength={charLimit + 50}
             />
 
             {/* Send button */}
             <button
               type="submit"
               disabled={!canSend}
-              className={[
-                'flex size-9 shrink-0 items-center justify-center rounded-xl transition-all duration-150',
-                canSend
-                  ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 active:scale-95'
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed',
-              ].join(' ')}
+              className="flex size-9 shrink-0 items-center justify-center transition-all duration-150 active:scale-95"
+              style={{
+                borderRadius: '25px',
+                background: canSend ? '#001EB3' : '#e5e5e5',
+                color: canSend ? '#ffffff' : '#999999',
+                cursor: canSend ? 'pointer' : 'not-allowed',
+                border: 'none',
+              }}
               aria-label={isLoading ? 'Procesando…' : 'Enviar consulta'}
+              onMouseEnter={(e) => {
+                if (canSend) e.currentTarget.style.background = '#0D2A8A'
+              }}
+              onMouseLeave={(e) => {
+                if (canSend) e.currentTarget.style.background = '#001EB3'
+              }}
             >
               {isLoading ? (
                 /* Spinner */
@@ -180,18 +195,16 @@ export default function ChatInput({
 
           {/* Footer row: char counter + hint */}
           <div className="mt-1.5 flex items-center justify-between px-1">
-            <p className="text-[11px] text-slate-400">
-              <kbd className="rounded border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[10px]">Enter</kbd>
+            <p className="text-[11px]" style={{ color: '#aaaaaa' }}>
+              <kbd className="rounded px-1 py-px font-mono text-[10px]" style={{ border: '1px solid #d1d1d1', background: '#f5f5f5' }}>Enter</kbd>
               {' '}para enviar &nbsp;·&nbsp;{' '}
-              <kbd className="rounded border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[10px]">Shift+Enter</kbd>
+              <kbd className="rounded px-1 py-px font-mono text-[10px]" style={{ border: '1px solid #d1d1d1', background: '#f5f5f5' }}>Shift+Enter</kbd>
               {' '}para nueva línea
             </p>
             <span
               id="char-counter"
-              className={[
-                'text-[11px] tabular-nums',
-                isOverLimit ? 'font-semibold text-red-500' : 'text-slate-400',
-              ].join(' ')}
+              className="text-[11px] tabular-nums"
+              style={{ color: isOverLimit ? '#e74c3c' : '#aaaaaa', fontWeight: isOverLimit ? '600' : '400' }}
               aria-live="polite"
             >
               {charCount > 0 ? `${charCount} / ${charLimit}` : ''}
