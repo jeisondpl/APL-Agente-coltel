@@ -44,34 +44,32 @@ export default function LoginPage() {
   return (
     <div className="flex h-screen w-screen overflow-hidden">
       {/* ── Left panel (60%) ── */}
-      <div className="relative hidden w-[60%] flex-col lg:flex">
-        {/* Background image */}
+      <div className="relative hidden w-[60%] lg:flex">
+        {/* Background image — fills the entire panel */}
         <Image
           src="/img-pruebas/millicom/login.png"
           alt="Fondo Tigo Coltel"
           fill
           priority
-          className="object-cover"
+          className="object-cover object-center"
           sizes="60vw"
         />
-        {/* Dark-blue overlay */}
+        {/* Subtle gradient overlay — bottom-to-top so image stays visible */}
         <div
           className="absolute inset-0"
-          style={{ background: 'rgba(0, 10, 60, 0.62)' }}
+          style={{
+            background:
+              'linear-gradient(to top, rgba(0,10,80,0.75) 0%, rgba(0,10,80,0.15) 50%, rgba(0,0,0,0) 100%)',
+          }}
           aria-hidden="true"
         />
-        {/* Centered logo */}
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-12">
-          <Image
-            src="/img-pruebas/millicom/logo.png"
-            alt="Tigo — Millicom"
-            width={200}
-            height={80}
-            className="object-contain drop-shadow-xl"
-            priority
-          />
-          <p className="mt-6 text-center text-lg font-light text-white/80 max-w-sm leading-relaxed">
-            Plataforma de soporte técnico inteligente para Coltel
+        {/* Bottom text only — no logo box over the image */}
+        <div className="absolute bottom-10 left-0 right-0 z-10 px-12 text-center">
+          <p className="text-lg font-semibold text-white drop-shadow-md">
+            Plataforma de soporte técnico inteligente
+          </p>
+          <p className="mt-1 text-sm text-white/70">
+            Coltel — Millicom
           </p>
         </div>
       </div>
