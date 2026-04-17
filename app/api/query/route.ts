@@ -19,11 +19,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const payload: Record<string, unknown> = { question }
     if (thread_id) payload.thread_id = thread_id
 
-    const backendResponse = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 60_000)
+
+    let backendResponse: Response
+    try {
+      backendResponse = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeout)
+    }
 
     if (!backendResponse.ok) {
       const errorText = await backendResponse.text().catch(() => '')
