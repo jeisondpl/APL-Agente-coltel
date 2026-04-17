@@ -194,7 +194,7 @@ function Header({
         {/* Logo */}
         <div className="flex shrink-0 items-center justify-center" style={{ width: 40, height: 40 }}>
           <Image
-            src="/img-pruebas/millicom/logo.png"
+            src="/img-pruebas/millicom/LogoNavbar.png"
             alt="Tigo"
             width={40}
             height={40}
