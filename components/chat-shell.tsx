@@ -3,15 +3,23 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import type { ChatMessage, AnswerContentBlock, ApiQueryResponse } from '@/lib/types'
+import type {
+  ChatMessage,
+  AnswerContentBlock,
+  ApiQueryResponse,
+  UserSession,
+  ThreadMessage,
+} from '@/lib/types'
 import { generateId } from '@/lib/utils'
 import ChatMessageComponent, { TypingIndicator } from './chat-message'
 import ChatInput from './chat-input'
+import Sidebar from './sidebar'
+import DocumentsPanel from './documents-panel'
 
 const SUGGESTED_QUESTION =
   '¿cómo se resuelven los incidentes de negociaciones fallidas?'
 
-// ─── Tigo design tokens (used inline for non-Tailwind values) ────────────────
+// ─── Tigo design tokens ────────────────────────────────────────────────────────
 const T = {
   primary:   '#001EB3',
   secondary: '#0D2A8A',
@@ -77,7 +85,7 @@ function EmptyState({ onSuggest }: { onSuggest: (q: string) => void }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-      {/* Icon cluster */}
+      {/* Icon */}
       <div className="relative mb-6">
         <div
           className="flex size-16 items-center justify-center rounded-2xl shadow-lg"
@@ -119,11 +127,10 @@ function EmptyState({ onSuggest }: { onSuggest: (q: string) => void }) {
             key={question}
             type="button"
             onClick={() => onSuggest(question)}
-            className="flex items-start gap-3 p-4 text-left transition-all duration-150 focus-ring"
+            className="flex items-start gap-3 p-4 text-left transition-all duration-150"
             style={{
               background: T.cardBg,
               borderRadius: '10px',
-              borderLeft: `5px solid ${T.primary}`,
               border: `1px solid ${T.border}`,
               borderLeftWidth: '5px',
               borderLeftColor: T.primary,
@@ -169,144 +176,155 @@ function EmptyState({ onSuggest }: { onSuggest: (q: string) => void }) {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 
-function Header({
-  onNewChat,
-  hasMessages,
-  userName,
-  onLogout,
-}: {
-  onNewChat: () => void
-  hasMessages: boolean
+interface HeaderProps {
   userName: string
+  userRole: 'admin' | 'user' | ''
+  activeTab: 'chat' | 'documents'
+  onTabChange: (tab: 'chat' | 'documents') => void
   onLogout: () => void
-}) {
+}
+
+function Header({ userName, userRole, activeTab, onTabChange, onLogout }: HeaderProps) {
+  const isAdmin = userRole === 'admin'
+
   return (
-    <header
-      style={{
-        background: T.primary,
-        height: '64px',
-        boxShadow: '0px 0px 5px 0px #000000',
-        flexShrink: 0,
-      }}
-      className="flex items-center"
-    >
-      <div className="mx-auto flex w-full max-w-4xl items-center gap-3 px-4">
-        {/* Logo */}
-        <div className="flex shrink-0 items-center justify-center" style={{ width: 40, height: 40 }}>
-          <Image
-            src="/img-pruebas/millicom/LogoNavbar.png"
-            alt="Tigo"
-            width={40}
-            height={40}
-            className="object-contain"
-          />
-        </div>
+    <div style={{ flexShrink: 0 }}>
+      {/* Main header bar */}
+      <header
+        style={{
+          background: T.primary,
+          height: '64px',
+          boxShadow: '0px 0px 5px 0px #000000',
+        }}
+        className="flex items-center"
+      >
+        <div className="mx-auto flex w-full items-center gap-3 px-4">
+          {/* Logo */}
+          <div className="flex shrink-0 items-center justify-center" style={{ width: 40, height: 40 }}>
+            <Image
+              src="/img-pruebas/millicom/LogoNavbar.png"
+              alt="Tigo"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
+          </div>
 
-        {/* Title block */}
-        <div className="flex-1 min-w-0">
-          <h1 className="text-sm font-semibold leading-tight text-white">
-            Asistente IA
-          </h1>
-          <p className="truncate text-xs" style={{ color: 'rgba(255,255,255,0.70)' }}>
-            Coltel — Soporte técnico
-          </p>
-        </div>
+          {/* Title block */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-semibold leading-tight text-white">
+              Asistente IA
+            </h1>
+            <p className="truncate text-xs" style={{ color: 'rgba(255,255,255,0.70)' }}>
+              Coltel — Soporte técnico
+            </p>
+          </div>
 
-        {/* Online badge */}
-        <div
-          className="hidden sm:flex items-center gap-1.5 rounded-full px-2.5 py-1"
-          style={{ background: 'rgba(255,255,255,0.20)' }}
-        >
-          <span
-            className="size-1.5 animate-pulse rounded-full bg-white"
+          {/* Online badge */}
+          <div
+            className="hidden sm:flex items-center gap-1.5 rounded-full px-2.5 py-1"
+            style={{ background: 'rgba(255,255,255,0.20)' }}
+          >
+            <span className="size-1.5 animate-pulse rounded-full bg-white" aria-hidden="true" />
+            <span className="text-[11px] font-medium text-white">En línea</span>
+          </div>
+
+          {/* Divider */}
+          <div
+            className="hidden sm:block h-6 w-px"
+            style={{ background: 'rgba(255,255,255,0.25)' }}
             aria-hidden="true"
           />
-          <span className="text-[11px] font-medium text-white">En línea</span>
-        </div>
 
-        {/* New chat button */}
-        <button
-          type="button"
-          onClick={onNewChat}
-          disabled={!hasMessages}
-          title="Nueva conversación"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40"
+          {/* User name */}
+          {userName && (
+            <span
+              className="hidden sm:block text-xs font-medium text-white truncate max-w-[120px]"
+              title={userName}
+            >
+              {userName}
+            </span>
+          )}
+
+          {/* Logout button */}
+          <button
+            type="button"
+            onClick={onLogout}
+            title="Cerrar sesión"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all duration-150"
+            style={{ border: '1px solid rgba(255,255,255,0.30)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+          >
+            <svg
+              className="size-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
+              />
+            </svg>
+            <span className="hidden sm:inline">Salir</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Tab bar — only shown when user is admin (to show Documents tab) */}
+      {isAdmin && (
+        <div
+          role="tablist"
+          aria-label="Secciones de la aplicación"
           style={{
-            border: '1px solid rgba(255,255,255,0.30)',
-          }}
-          onMouseEnter={(e) => {
-            if (hasMessages) e.currentTarget.style.background = 'rgba(255,255,255,0.10)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent'
+            background: '#FFFFFF',
+            borderBottom: `2px solid ${T.border}`,
+            display: 'flex',
+            height: '48px',
+            paddingLeft: '16px',
           }}
         >
-          <svg
-            className="size-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
-          Nueva
-        </button>
-
-        {/* Divider */}
-        <div
-          className="hidden sm:block h-6 w-px"
-          style={{ background: 'rgba(255,255,255,0.25)' }}
-          aria-hidden="true"
-        />
-
-        {/* User name */}
-        {userName && (
-          <span
-            className="hidden sm:block text-xs font-medium text-white truncate max-w-[120px]"
-            title={userName}
-          >
-            {userName}
-          </span>
-        )}
-
-        {/* Logout button */}
-        <button
-          type="button"
-          onClick={onLogout}
-          title="Cerrar sesión"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all duration-150"
-          style={{ border: '1px solid rgba(255,255,255,0.30)' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.10)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent'
-          }}
-        >
-          <svg
-            className="size-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
-            />
-          </svg>
-          <span className="hidden sm:inline">Salir</span>
-        </button>
-      </div>
-    </header>
+          {(['chat', 'documents'] as const).map((tab) => {
+            const isActive = activeTab === tab
+            const labels = { chat: 'Chat', documents: 'Documentos' }
+            return (
+              <button
+                key={tab}
+                role="tab"
+                type="button"
+                aria-selected={isActive}
+                onClick={() => onTabChange(tab)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: isActive ? `2px solid ${T.primary}` : '2px solid transparent',
+                  color: isActive ? T.primary : T.text,
+                  fontWeight: isActive ? '600' : '400',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  padding: '0 18px',
+                  height: '100%',
+                  transition: 'color 0.15s, border-color 0.15s',
+                  marginBottom: '-2px', // overlap the parent border-bottom
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.color = T.primary
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.color = T.text
+                }}
+              >
+                {labels[tab]}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -314,143 +332,262 @@ function Header({
 
 export default function ChatShell() {
   const router = useRouter()
+
+  // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [userName, setUserName] = useState('')
+  const [currentThreadId, setCurrentThreadId] = useState<string | null>(null)
+
+  // UI state
+  const [activeTab, setActiveTab] = useState<'chat' | 'documents'>('chat')
+  const [userSession, setUserSession] = useState<UserSession | null>(null)
+  const [token, setToken] = useState<string>('')
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Read user from localStorage on mount
+  // Read session from localStorage on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem('tigo_user')
       if (raw) {
-        const parsed = JSON.parse(raw) as { username: string; name: string }
-        setUserName(parsed.name ?? parsed.username)
+        const parsed = JSON.parse(raw) as UserSession
+        setUserSession(parsed)
       }
+      const storedToken = localStorage.getItem('tigo_token') ?? ''
+      setToken(storedToken)
     } catch {
       // ignore parse errors
     }
   }, [])
 
-  // Scroll to the bottom whenever messages change or loading state toggles
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('tigo_user')
+    localStorage.removeItem('tigo_token')
     router.replace('/login')
   }, [router])
-
-  const handleSubmit = useCallback(async (question: string) => {
-    if (!question.trim() || isLoading) return
-
-    const userMessage: ChatMessage = {
-      id: generateId(),
-      role: 'user',
-      content: question,
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue('')
-    setIsLoading(true)
-
-    try {
-      const response = await fetch('/api/query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const errorText =
-          (errorData as Record<string, string>)?.error ??
-          `Error del servidor (${response.status}). Por favor intenta de nuevo.`
-        throw new Error(errorText)
-      }
-
-      const data: ApiQueryResponse = await response.json()
-      const assistantContent: AnswerContentBlock[] = data.answer.content
-
-      const assistantMessage: ChatMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: assistantContent,
-        timestamp: new Date(),
-      }
-
-      setMessages((prev) => [...prev, assistantMessage])
-    } catch (err) {
-      const errorText =
-        err instanceof Error
-          ? err.message
-          : 'No se pudo conectar con el asistente. Verifica tu conexión y vuelve a intentarlo.'
-
-      const errorMessage: ChatMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: errorText,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [isLoading])
 
   const handleNewChat = useCallback(() => {
     setMessages([])
     setInputValue('')
     setIsLoading(false)
+    setCurrentThreadId(null)
   }, [])
 
+  // Load messages for a thread selected from the sidebar
+  const handleSelectThread = useCallback(
+    async (threadId: string) => {
+      if (threadId === currentThreadId) return
+      setCurrentThreadId(threadId)
+      setMessages([])
+      setIsLoading(true)
+
+      try {
+        const res = await fetch(`/api/threads/${threadId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error((data as Record<string, string>).error ?? `Error ${res.status}`)
+        }
+
+        const data = await res.json()
+
+        // Backend may return thread detail directly or { messages: [...] }
+        const threadMessages: ThreadMessage[] =
+          Array.isArray(data.messages)
+            ? data.messages
+            : Array.isArray(data)
+            ? data
+            : []
+
+        // Map backend messages to ChatMessage
+        const mapped: ChatMessage[] = threadMessages.map((m) => ({
+          id: generateId(),
+          role: m.role,
+          content:
+            m.role === 'user'
+              ? m.content
+              : ([{ type: 'text', data: m.content }] as AnswerContentBlock[]),
+          timestamp: m.created_at ? new Date(m.created_at) : new Date(),
+        }))
+
+        setMessages(mapped)
+      } catch (err) {
+        const errorText =
+          err instanceof Error ? err.message : 'Error al cargar la conversación.'
+        setMessages([
+          {
+            id: generateId(),
+            role: 'assistant',
+            content: errorText,
+            timestamp: new Date(),
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [currentThreadId, token]
+  )
+
+  const handleSubmit = useCallback(
+    async (question: string) => {
+      if (!question.trim() || isLoading) return
+
+      const userMessage: ChatMessage = {
+        id: generateId(),
+        role: 'user',
+        content: question,
+        timestamp: new Date(),
+      }
+
+      setMessages((prev) => [...prev, userMessage])
+      setInputValue('')
+      setIsLoading(true)
+
+      try {
+        const response = await fetch('/api/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            question,
+            ...(currentThreadId ? { thread_id: currentThreadId } : {}),
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          const errorText =
+            (errorData as Record<string, string>)?.error ??
+            `Error del servidor (${response.status}). Por favor intenta de nuevo.`
+          throw new Error(errorText)
+        }
+
+        const data: ApiQueryResponse = await response.json()
+        const assistantContent: AnswerContentBlock[] = data.answer.content
+
+        const assistantMessage: ChatMessage = {
+          id: generateId(),
+          role: 'assistant',
+          content: assistantContent,
+          timestamp: new Date(),
+        }
+
+        setMessages((prev) => [...prev, assistantMessage])
+
+        // Save the thread_id returned by the backend for subsequent messages
+        if (data.thread_id && data.thread_id !== currentThreadId) {
+          setCurrentThreadId(data.thread_id)
+        }
+      } catch (err) {
+        const errorText =
+          err instanceof Error
+            ? err.message
+            : 'No se pudo conectar con el asistente. Verifica tu conexión y vuelve a intentarlo.'
+
+        const errorMessage: ChatMessage = {
+          id: generateId(),
+          role: 'assistant',
+          content: errorText,
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, errorMessage])
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [isLoading, currentThreadId, token]
+  )
+
   const hasMessages = messages.length > 0
+  const isAdmin = userSession?.role === 'admin'
+  const userName = userSession?.name ?? userSession?.username ?? ''
 
   return (
     <div
       className="flex h-dvh flex-col overflow-hidden"
       style={{ background: T.bg }}
     >
+      {/* Header + optional tab bar */}
       <Header
-        onNewChat={handleNewChat}
-        hasMessages={hasMessages}
         userName={userName}
+        userRole={userSession?.role ?? ''}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         onLogout={handleLogout}
       />
 
-      {/* Message area */}
-      <main
-        className="flex-1 overflow-y-auto"
-        role="main"
-        aria-label="Conversación con el asistente"
-        style={{ background: T.bg }}
-      >
-        <div className="mx-auto max-w-3xl px-4">
-          {!hasMessages && !isLoading ? (
-            <EmptyState onSuggest={handleSubmit} />
-          ) : (
-            <div className="space-y-6 py-6">
-              {messages.map((msg) => (
-                <ChatMessageComponent key={msg.id} message={msg} />
-              ))}
-              {isLoading && <TypingIndicator />}
-              <div ref={messagesEndRef} aria-hidden="true" />
-            </div>
-          )}
-        </div>
-      </main>
+      {/* Body: sidebar + content */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-      {/* Composer */}
-      <ChatInput
-        value={inputValue}
-        onChange={setInputValue}
-        onSubmit={handleSubmit}
-        isLoading={isLoading}
-        suggestedQuestion={!hasMessages ? SUGGESTED_QUESTION : undefined}
-      />
+        {/* Sidebar — only visible in chat tab, hidden on small screens */}
+        {activeTab === 'chat' && (
+          <div className="hidden lg:flex" style={{ flexShrink: 0 }}>
+            <Sidebar
+              currentThreadId={currentThreadId}
+              onSelectThread={handleSelectThread}
+              onNewChat={handleNewChat}
+              token={token}
+            />
+          </div>
+        )}
+
+        {/* Main content area */}
+        {activeTab === 'documents' && isAdmin ? (
+          <DocumentsPanel token={token} />
+        ) : (
+          /* Chat area */
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              background: T.bg,
+            }}
+          >
+            {/* Message list */}
+            <main
+              className="flex-1 overflow-y-auto"
+              role="main"
+              aria-label="Conversación con el asistente"
+              style={{ background: T.bg }}
+            >
+              <div className="mx-auto max-w-3xl px-4">
+                {!hasMessages && !isLoading ? (
+                  <EmptyState onSuggest={handleSubmit} />
+                ) : (
+                  <div className="space-y-6 py-6">
+                    {messages.map((msg) => (
+                      <ChatMessageComponent key={msg.id} message={msg} />
+                    ))}
+                    {isLoading && <TypingIndicator />}
+                    <div ref={messagesEndRef} aria-hidden="true" />
+                  </div>
+                )}
+              </div>
+            </main>
+
+            {/* Composer */}
+            <ChatInput
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={handleSubmit}
+              isLoading={isLoading}
+              suggestedQuestion={!hasMessages ? SUGGESTED_QUESTION : undefined}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,48 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const BACKEND_URL =
-  process.env.BACKEND_URL ?? 'https://lqbjk5bh-8081.use2.devtunnels.ms/query'
+const BASE_URL =
+  (process.env.BACKEND_URL ?? 'https://lqbjk5bh-8081.use2.devtunnels.ms').replace(/\/query$/, '')
+
+export const maxDuration = 60
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json()
-    const question: string = body?.question ?? ''
-    const thread_id: string | undefined = body?.thread_id
+    const { question, thread_id } = body as { question?: string; thread_id?: string }
+    const authHeader = request.headers.get('authorization') ?? ''
 
-    if (!question || question.trim().length === 0) {
+    if (!question?.trim()) {
       return NextResponse.json(
         { error: 'La pregunta no puede estar vacía.' },
         { status: 400 }
       )
     }
 
-    const payload: Record<string, unknown> = { question }
-    if (thread_id) payload.thread_id = thread_id
-
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 60_000)
 
-    let backendResponse: Response
+    let res: Response
     try {
-      backendResponse = await fetch(BACKEND_URL, {
+      res = await fetch(`${BASE_URL}/queries/agent`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: authHeader,
+        },
+        body: JSON.stringify({
+          question,
+          ...(thread_id ? { thread_id } : {}),
+        }),
         signal: controller.signal,
       })
     } finally {
       clearTimeout(timeout)
     }
 
-    if (!backendResponse.ok) {
-      const errorText = await backendResponse.text().catch(() => '')
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
       return NextResponse.json(
-        { error: `Error del backend (${backendResponse.status}): ${errorText}` },
-        { status: backendResponse.status }
+        { error: `Error del backend (${res.status}): ${text}` },
+        { status: res.status }
       )
     }
 
-    const data = await backendResponse.json()
+    const data = await res.json()
     return NextResponse.json(data, { status: 200 })
   } catch (err) {
     const message =

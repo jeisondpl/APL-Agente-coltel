@@ -29,3 +29,42 @@ export type ApiQueryResponse = {
   }
   thread_id?: string | null
 }
+
+// ─── Thread / history types ───────────────────────────────────────────────────
+
+export type ThreadMessage = {
+  role: 'user' | 'assistant'
+  content: string
+  created_at?: string
+}
+
+export type Thread = {
+  id: string
+  title?: string
+  created_at: string
+  updated_at?: string
+  messages?: ThreadMessage[]
+}
+
+// ─── Sources / files ──────────────────────────────────────────────────────────
+
+export type SourceFile = {
+  name: string
+  size?: number
+  created_at?: string
+}
+
+export type TaskStatus = {
+  task_id: string
+  status: 'PENDING' | 'SUCCESS' | 'FAILURE'
+  filename?: string
+}
+
+// ─── User session ─────────────────────────────────────────────────────────────
+
+export type UserSession = {
+  username: string
+  name: string
+  role: 'admin' | 'user'
+  backendUsername: string
+}

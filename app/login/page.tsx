@@ -3,12 +3,20 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import type { UserSession } from '@/lib/types'
 
 const USERS = [
   { username: 'admin', password: 'tigo2024', name: 'Administrador' },
   { username: 'agente1', password: 'coltel123', name: 'Agente Soporte' },
   { username: 'supervisor', password: 'super456', name: 'Supervisor N2' },
 ]
+
+// Maps local usernames to backend credentials
+const BACKEND_MAP: Record<string, { username: string; role: 'admin' | 'user' }> = {
+  admin:      { username: 'jadiazp',     role: 'admin' },
+  agente1:    { username: 'jermartinez', role: 'user' },
+  supervisor: { username: 'mpineda',     role: 'admin' },
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,28 +25,54 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    // Simulate a brief auth check delay
-    setTimeout(() => {
-      const match = USERS.find(
-        (u) => u.username === username.trim() && u.password === password
-      )
+    const match = USERS.find(
+      (u) => u.username === username.trim() && u.password === password
+    )
 
-      if (match) {
-        localStorage.setItem(
-          'tigo_user',
-          JSON.stringify({ username: match.username, name: match.name })
-        )
-        router.push('/')
-      } else {
-        setError('Usuario o contraseña incorrectos. Verifica tus credenciales.')
-        setLoading(false)
+    if (!match) {
+      setError('Usuario o contraseña incorrectos. Verifica tus credenciales.')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const mapped = BACKEND_MAP[match.username]
+
+      // Exchange credentials for a backend JWT token
+      const tokenRes = await fetch('/api/auth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: mapped.username, role: mapped.role }),
+      })
+
+      if (!tokenRes.ok) {
+        const err = await tokenRes.json().catch(() => ({}))
+        const msg = (err as Record<string, string>).error ?? `Error ${tokenRes.status}`
+        throw new Error(msg)
       }
-    }, 600)
+
+      const { access_token } = await tokenRes.json() as { access_token: string }
+
+      const session: UserSession = {
+        username: match.username,
+        name: match.name,
+        role: mapped.role,
+        backendUsername: mapped.username,
+      }
+
+      localStorage.setItem('tigo_token', access_token)
+      localStorage.setItem('tigo_user', JSON.stringify(session))
+      router.push('/')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al conectar con el servidor.'
+      setError(msg)
+      setLoading(false)
+    }
   }
 
   return (
