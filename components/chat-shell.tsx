@@ -275,8 +275,8 @@ function Header({ userName, userRole, activeTab, onTabChange, onLogout }: Header
         </div>
       </header>
 
-      {/* Tab bar — only shown when user is admin (to show Documents tab) */}
-      {isAdmin && (
+      {/* Tab bar — always visible for all users */}
+      {(
         <div
           role="tablist"
           aria-label="Secciones de la aplicación"
@@ -542,8 +542,8 @@ export default function ChatShell() {
         )}
 
         {/* Main content area */}
-        {activeTab === 'documents' && isAdmin ? (
-          <DocumentsPanel token={token} />
+        {activeTab === 'documents' ? (
+          <DocumentsPanel token={token} isAdmin={isAdmin} />
         ) : (
           /* Chat area */
           <div
