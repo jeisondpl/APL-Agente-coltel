@@ -18,7 +18,7 @@ export default function RootLayout({
       <head>
         {/* Roboto loaded via globals.css @import — no extra link tag needed */}
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
       </body>
     </html>
