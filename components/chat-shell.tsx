@@ -352,6 +352,10 @@ export default function ChatShell() {
       const raw = localStorage.getItem('tigo_user')
       if (raw) {
         const parsed = JSON.parse(raw) as UserSession
+        // Fallback: assign role from username if missing (old sessions)
+        if (!parsed.role) {
+          parsed.role = ['admin', 'supervisor'].includes(parsed.username) ? 'admin' : 'user'
+        }
         setUserSession(parsed)
       }
       const storedToken = localStorage.getItem('tigo_token') ?? ''
