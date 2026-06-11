@@ -1,0 +1,9 @@
+flowchart TD
+    START([Start]) --> extract["extract_xlsx_to_df"]
+    extract --> to_text["extract_text"]
+    to_text --> to_md_file["generate_md_file"]
+    extract --> to_payloads["build_payloads"]
+    to_payloads --> embeddings["generate_embeddings"]
+    embeddings --> vectorstore["save_to_vector_store"]
+    vectorstore --> END([End])
+    to_md_file --> END

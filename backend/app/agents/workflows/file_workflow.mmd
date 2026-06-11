@@ -1,0 +1,13 @@
+flowchart TD
+    START([Start]) --> save_file["save_file"]
+    save_file -->|".docx"| process_docx["process_docx"]
+    save_file -->|".pdf"| process_pdf["process_pdf"]
+    process_pdf --> classify["classify_images"]
+    process_docx --> classify
+    classify --> describe["describe_images"]
+    describe --> summary["summarize"]
+    summary --> chunks["generate_chunks"]
+    chunks --> embeddings["generate_embeddings"]
+    embeddings --> vectorstore["save_to_vector_store"]
+    vectorstore --> storage["save_files_to_storage"]
+    storage --> END([End])

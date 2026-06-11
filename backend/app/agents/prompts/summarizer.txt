@@ -1,0 +1,17 @@
+El siguiente texto corresponde a un workaround para atender 
+casos de soporte en una mesa de ayuda para usuarios de Movistar Colombia.
+Extrae el título y resume en un párrafo específicamente de qué se trata 
+el documento, es decir, qué proceso explica y qué tipo de incidentes 
+ayuda a resolver.
+
+Texto del documento:
+{{ full_text }}
+
+Retorna un objeto que contenga únicamente el título del documento, 
+y la descripción breve de su contenido, así:
+{
+    title: Título del documento,
+    summary: Descripción del documento
+}
+
+

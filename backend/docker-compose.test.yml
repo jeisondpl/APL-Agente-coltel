@@ -1,0 +1,136 @@
+networks:
+  coltel_test_net:
+    driver: bridge
+
+name: coltel-test
+services:
+  qdrant-test:
+    image: qdrant/qdrant:v1.18.0
+    ports:
+      - '6338:6333' # Qdrant HTTP port
+      - '6339:6334' # Qdrant gRPC port
+    volumes:
+      - qdrant_test_data:/qdrant/storage
+    networks:
+      - coltel_test_net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:6333/healthz" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  postgres-test:
+    image: postgres:16.4
+    ports:
+      - '5438:5432'
+    env_file:
+      - .env.test
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - coltel_test_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
+      interval: 5s
+      timeout: 5s
+      retries: 5      
+    restart: unless-stopped
+  minio-test:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    command: server /data --console-address ":9001"
+    ports:
+      - "9008:9000"
+      - "9009:9001"
+    env_file:
+      - .env.test
+    volumes:
+      - minio_test_data:/data
+    networks:
+      - coltel_test_net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  redis-test:
+    image: redis:7
+    volumes:
+      - redis_test_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    env_file:
+      - .env.test  
+    networks:
+      - coltel_test_net
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  coltel-test-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --proxy-headers --port 8081     
+    env_file:
+      - .env.test
+    depends_on:
+      qdrant-test:
+        condition: service_healthy
+      minio-test:
+        condition: service_healthy
+      postgres-test:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - coltel_test_net
+    ports:
+      - '8088:8081'
+    restart: unless-stopped
+  worker-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.test
+    command: >
+      celery -A app.celery_tasks.worker:app worker --loglevel=info     
+    volumes:
+      - .:/app
+    networks:
+      - coltel_test_net
+    depends_on:
+      qdrant-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      coltel-test-agent:
+        condition: service_started
+    restart: unless-stopped
+  flower-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      celery -A app.celery_tasks.worker:app flower --port=5555 --persistent=True
+    env_file:
+      - .env.test
+    ports:
+      - 5558:5555
+    depends_on:
+      - worker-test
+    networks:
+      - coltel_test_net
+    restart: unless-stopped      
+
+volumes:
+  qdrant_test_data:
+  redis_test_data:
+  minio_test_data:
+  postgres_test_data:

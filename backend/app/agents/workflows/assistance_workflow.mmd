@@ -1,0 +1,15 @@
+flowchart TD
+  START([Start]) --> recover[recover]
+  recover --> intent[classify intent]
+
+  intent -->|allowed| llm[llm]
+  intent -->|not allowed| rejection[reject question]
+
+  rejection --> response[build response]
+
+  llm -->|tool_calls| tools[tools]
+  tools --> llm
+  llm -->|no tool_calls| response
+
+  response --> save[save answer]
+  save --> END([End])

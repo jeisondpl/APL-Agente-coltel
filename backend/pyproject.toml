@@ -1,0 +1,54 @@
+[tool.flake8]
+max-line-length = 88
+
+exclude = [
+    ".git",
+    "__pycache__",
+    ".mypy_cache",
+    "env",
+    ".env",
+    "venv",
+    ".venv",
+]
+
+extend-ignore = [
+    "E203", # Ignore whitespace before ':'
+    "E501", # black controlls line wrapping
+    "W503", # Ignore line break before binary operator
+]
+
+
+[tool.black]
+line-length = 88
+skip-string-normalization = false
+target-version = ['py311', 'py312', 'py313']
+
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | __pycache__
+  | build
+  | dist
+  | env
+  | venv
+  | \.venv
+  | \.env
+)/
+'''
+
+[tool.isort]
+profile = "black"
+# multi_line_output = 3
+
+skip = [
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "env",
+    "venv",
+    ".venv",
+    ".env",
+]
